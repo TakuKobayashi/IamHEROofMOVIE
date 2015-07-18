@@ -1,13 +1,11 @@
 package com.movie.of.hero.am.i.iamheroofmovie;
 
 import android.app.Activity;
-import android.content.Intent;
 import android.media.AudioFormat;
 import android.media.AudioManager;
 import android.media.AudioTrack;
 import android.media.audiofx.Visualizer;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.Toast;
@@ -18,23 +16,13 @@ import com.google.android.youtube.player.YouTubePlayer;
 import com.google.android.youtube.player.YouTubePlayerView;
 
 import org.eclipse.paho.android.service.MqttAndroidClient;
-import org.eclipse.paho.client.mqttv3.IMqttActionListener;
-import org.eclipse.paho.client.mqttv3.IMqttToken;
 import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
-import org.eclipse.paho.client.mqttv3.MqttException;
-import org.eclipse.paho.client.mqttv3.MqttPersistenceException;
 
 import java.net.URISyntaxException;
 import java.util.UUID;
 
 
-public class MainActivity extends YouTubeBaseActivity {
-
-    private MqttAndroidClient mqttAndroidClient;
-
-    //Youtube のビデオID
-    private static String videoId = "2kJ5eMXAkyk";
-    private YouTubePlayer youTubePlayer;
+public class AudioTestActivity extends Activity {
 
     AudioTrack mAudioTrack;
     Visualizer mVisualizer;
@@ -46,70 +34,8 @@ public class MainActivity extends YouTubeBaseActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
+        setContentView(R.layout.audiotest);
 
-        YouTubePlayerView youTubeView = (YouTubePlayerView) findViewById(R.id.youtube_view);
-        //Youtubeビューの初期化
-        youTubeView.initialize(Config.getDeveloperKey(), new YouTubePlayer.OnInitializedListener() {
-            @Override
-            public void onInitializationSuccess(YouTubePlayer.Provider provider, YouTubePlayer player, boolean wasRestored) {
-                if (!wasRestored) {
-                    youTubePlayer = player;
-                    youTubePlayer.setFullscreen(true);
-                    youTubePlayer.loadVideo(videoId);
-                }
-            }
-
-            @Override
-            public void onInitializationFailure(YouTubePlayer.Provider provider, YouTubeInitializationResult errorReason) {
-                String errorMessage = String.format("ERR", errorReason.toString());
-                Toast.makeText(MainActivity.this, errorMessage, Toast.LENGTH_LONG).show();
-            }
-        });
-
-        String clientId = UUID.randomUUID().toString();
-        mqttAndroidClient = new MqttAndroidClient(this, "tcp://100.123.45.194:61613", "webconsole-88028"); // (1)
-        MqttConnectOptions options = new MqttConnectOptions();
-        options.setUserName("admin");
-        options.setPassword("password".toCharArray());
-        options.setCleanSession(false);
-
-        //connecしてpublisする処理だが,connecができていないのでコメントアウト
-/*
-        try {
-            mqttAndroidClient.connect(options, this, new IMqttActionListener() {
-
-                @Override
-                public void onSuccess(IMqttToken mqttToken) {
-                    Log.d("TakuTaku", "SUCCESS:" + mqttToken.getMessageId());
-                    try {
-                        mqttAndroidClient.publish("3dbcs.biz/UTokyo/iREF/6F/Hilobby/Light/LED/LoE/L50/brightness/W", "value=0".getBytes(), 0, false); // (3)
-                    } catch (MqttPersistenceException e) {
-                        e.printStackTrace();
-                    } catch (MqttException e) {
-                        e.printStackTrace();
-                    }
-                }
-
-                @Override
-                public void onFailure(IMqttToken arg0, Throwable arg1) {
-                    Log.d("TakuTaku", "FAIL:" + arg1.getMessage());
-                }
-            });
-        } catch (MqttException e) {
-            Log.d("TakuTaku", "error:" + e.getMessage());
-            e.printStackTrace();
-        }
-        //
-        */
-        try {
-            Subscriber subscriber = new Subscriber();
-            subscriber.connect();
-        } catch (URISyntaxException e) {
-            e.printStackTrace();
-        }
-
-        /*
         mAudioTrack = new AudioTrack(
                 AudioManager.STREAM_MUSIC, SAMPLE_RATE,
                 AudioFormat.CHANNEL_OUT_MONO,
@@ -157,8 +83,6 @@ public class MainActivity extends YouTubeBaseActivity {
            audioData[i] = (byte) (Byte.MAX_VALUE * (Math.sin(2.0 * Math.PI * t * freqA)));
         }
         mAudioTrack.write(audioData, 0, audioData.length);
-        */
-        startActivity(new Intent(this, AudioTestActivity.class));
     }
 
     @Override
@@ -186,22 +110,15 @@ public class MainActivity extends YouTubeBaseActivity {
     @Override
     protected void onResume() {
         super.onResume();
-        if(youTubePlayer != null && !youTubePlayer.isPlaying()){
-            youTubePlayer.play();
-        }
     }
 
     @Override
     protected void onPause() {
         super.onPause();
-        if(youTubePlayer != null) {
-            youTubePlayer.pause();
-        }
     }
 
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        youTubePlayer.release();
     }
 }
