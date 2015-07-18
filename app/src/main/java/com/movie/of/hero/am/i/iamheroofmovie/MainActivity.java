@@ -1,7 +1,12 @@
 package com.movie.of.hero.am.i.iamheroofmovie;
 
 import android.app.Activity;
+import android.content.Context;
 import android.content.Intent;
+import android.hardware.Sensor;
+import android.hardware.SensorEvent;
+import android.hardware.SensorEventListener;
+import android.hardware.SensorManager;
 import android.media.AudioFormat;
 import android.media.AudioManager;
 import android.media.AudioTrack;
@@ -10,6 +15,8 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.google.android.youtube.player.YouTubeBaseActivity;
@@ -28,13 +35,14 @@ import java.net.URISyntaxException;
 import java.util.UUID;
 
 
-public class MainActivity extends YouTubeBaseActivity {
+public class MainActivity extends YouTubeBaseActivity implements SensorEventListener{
 
     private MqttAndroidClient mqttAndroidClient;
 
     //Youtube のビデオID
     private static String videoId = "2kJ5eMXAkyk";
     private YouTubePlayer youTubePlayer;
+    private SensorManager mSensorManager;
 
     AudioTrack mAudioTrack;
     Visualizer mVisualizer;
@@ -48,7 +56,10 @@ public class MainActivity extends YouTubeBaseActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        mSensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
+
         YouTubePlayerView youTubeView = (YouTubePlayerView) findViewById(R.id.youtube_view);
+        //youTubeView.setVisibility(View.INVISIBLE);
         //Youtubeビューの初期化
         youTubeView.initialize(Config.getDeveloperKey(), new YouTubePlayer.OnInitializedListener() {
             @Override
@@ -158,7 +169,7 @@ public class MainActivity extends YouTubeBaseActivity {
         }
         mAudioTrack.write(audioData, 0, audioData.length);
         */
-        startActivity(new Intent(this, AudioTestActivity.class));
+        //startActivity(new Intent(this, AudioTestActivity.class));
     }
 
     @Override
@@ -189,6 +200,8 @@ public class MainActivity extends YouTubeBaseActivity {
         if(youTubePlayer != null && !youTubePlayer.isPlaying()){
             youTubePlayer.play();
         }
+        //照度センサー
+        mSensorManager.registerListener(this, mSensorManager.getDefaultSensor(Sensor.TYPE_LIGHT), SensorManager.SENSOR_DELAY_UI);
     }
 
     @Override
@@ -197,11 +210,26 @@ public class MainActivity extends YouTubeBaseActivity {
         if(youTubePlayer != null) {
             youTubePlayer.pause();
         }
+        mSensorManager.unregisterListener(this, mSensorManager.getDefaultSensor(Sensor.TYPE_LIGHT));
     }
 
     @Override
     protected void onDestroy() {
         super.onDestroy();
         youTubePlayer.release();
+    }
+
+    @Override
+    public void onSensorChanged(SensorEvent event) {
+        if(event.sensor.getType() == Sensor.TYPE_LIGHT){
+            float lux = event.values[0];
+            TextView t = (TextView) findViewById(R.id.debugText);
+            t.setText("lux:" + lux);
+        }
+    }
+
+    @Override
+    public void onAccuracyChanged(Sensor sensor, int accuracy) {
+
     }
 }
