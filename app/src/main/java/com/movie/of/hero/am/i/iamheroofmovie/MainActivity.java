@@ -33,7 +33,7 @@ public class MainActivity extends YouTubeBaseActivity {
 
     //Youtube のビデオID
     private static String videoId = "2kJ5eMXAkyk";
-    private YouTubePlayerView youTubeView;
+    private YouTubePlayer youTubePlayer;
 
     AudioTrack mAudioTrack;
     Visualizer mVisualizer;
@@ -47,13 +47,15 @@ public class MainActivity extends YouTubeBaseActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        youTubeView = (YouTubePlayerView) findViewById(R.id.youtube_view);
+        YouTubePlayerView youTubeView = (YouTubePlayerView) findViewById(R.id.youtube_view);
         //Youtubeビューの初期化
         youTubeView.initialize(Config.getDeveloperKey(), new YouTubePlayer.OnInitializedListener() {
             @Override
             public void onInitializationSuccess(YouTubePlayer.Provider provider, YouTubePlayer player, boolean wasRestored) {
                 if (!wasRestored) {
-                    player.loadVideo(videoId);
+                    youTubePlayer = player;
+                    youTubePlayer.setFullscreen(true);
+                    youTubePlayer.loadVideo(videoId);
                 }
             }
 
@@ -178,7 +180,24 @@ public class MainActivity extends YouTubeBaseActivity {
     }
 
     @Override
+    protected void onResume() {
+        super.onResume();
+        if(youTubePlayer != null && !youTubePlayer.isPlaying()){
+            youTubePlayer.play();
+        }
+    }
+
+    @Override
     protected void onPause() {
         super.onPause();
+        if(youTubePlayer != null) {
+            youTubePlayer.pause();
+        }
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        youTubePlayer.release();
     }
 }
