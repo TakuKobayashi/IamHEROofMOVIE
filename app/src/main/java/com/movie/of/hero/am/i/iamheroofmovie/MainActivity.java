@@ -5,6 +5,12 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.widget.Toast;
+
+import com.google.android.youtube.player.YouTubeBaseActivity;
+import com.google.android.youtube.player.YouTubeInitializationResult;
+import com.google.android.youtube.player.YouTubePlayer;
+import com.google.android.youtube.player.YouTubePlayerView;
 
 import org.eclipse.paho.android.service.MqttAndroidClient;
 import org.eclipse.paho.client.mqttv3.IMqttActionListener;
@@ -16,16 +22,36 @@ import org.eclipse.paho.client.mqttv3.MqttPersistenceException;
 import java.util.UUID;
 
 
-public class MainActivity extends Activity {
+public class MainActivity extends YouTubeBaseActivity {
+
+    private MqttAndroidClient mqttAndroidClient;
 
     //Youtube のビデオID
     private static String videoId = "9bZkp7q19f0";
-    private MqttAndroidClient mqttAndroidClient;
+    private YouTubePlayerView youTubeView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        youTubeView = (YouTubePlayerView) findViewById(R.id.youtube_view);
+        //Youtubeビューの初期化
+        youTubeView.initialize(Config.getDeveloperKey(), new YouTubePlayer.OnInitializedListener() {
+            @Override
+            public void onInitializationSuccess(YouTubePlayer.Provider provider, YouTubePlayer player, boolean wasRestored) {
+                if (!wasRestored) {
+                    player.loadVideo(videoId);
+                }
+            }
+
+            @Override
+            public void onInitializationFailure(YouTubePlayer.Provider provider, YouTubeInitializationResult errorReason) {
+                String errorMessage = String.format("ERR", errorReason.toString());
+                Toast.makeText(MainActivity.this, errorMessage, Toast.LENGTH_LONG).show();
+            }
+        });
+
         String clientId = UUID.randomUUID().toString();
         mqttAndroidClient = new MqttAndroidClient(this, "tcp://100.123.45.194:61623", "webconsole-88028"); // (1)
         MqttConnectOptions options = new MqttConnectOptions();
@@ -59,6 +85,58 @@ public class MainActivity extends Activity {
             e.printStackTrace();
         }
         */
+
+        /*
+        mAudioTrack = new AudioTrack(
+                AudioManager.STREAM_MUSIC, SAMPLE_RATE,
+                AudioFormat.CHANNEL_OUT_MONO,
+                AudioFormat.ENCODING_DEFAULT,
+                bufSize, AudioTrack.MODE_STREAM,
+                420);//セッションID
+        mAudioTrack.play();
+
+
+        mVisualizer = new Visualizer(420);
+
+// 1024
+        int captureSize = Visualizer.getCaptureSizeRange()[1];
+        mVisualizer.setCaptureSize(captureSize);
+
+
+        mVisualizer.setDataCaptureListener(
+                new Visualizer.OnDataCaptureListener() {
+                    // Waveデータ
+                    public void onWaveFormDataCapture(
+                            Visualizer visualizer,
+                            byte[] bytes, int samplingRate) {
+                    }
+
+                    // フーリエ変換
+                    public void onFftDataCapture(
+                            Visualizer visualizer,
+                            byte[] bytes, int samplingRate) {
+
+                        //このbytesがFFT後のデータ
+                        //何度も呼ばれるのでこのデータを分析する
+
+                    }, Visualizer.getMaxCaptureRate(),
+                            false,//trueならonWaveFormDataCapture()
+                            true);//trueならonFftDataCapture()
+
+                    mVisualizer.setEnabled(true);
+
+                    byte[] audioData = new byte[bufSize];
+
+                    // A単音
+                    double freqA = 440;
+                    double t = 0.0;
+                    double dt = 1.0 / SAMPLE_RATE;
+                    for (int i = 0; i < audioData.length; i++, t += dt) {
+                        audioData[i] = (byte) (Byte.MAX_VALUE * (Math.sin(2.0 *
+                                Math.PI * t * freqA)));
+                    }
+                    mAudioTrack.write(audioData, 0, audioData.length);
+                    */
     }
 
     @Override

@@ -32,3 +32,11 @@ proguard/
 .gradle
 app/build/
 build/
+
+#C++
+*.so
+*.o
+*.o.d
+
+#Config
+app/src/main/jni/
