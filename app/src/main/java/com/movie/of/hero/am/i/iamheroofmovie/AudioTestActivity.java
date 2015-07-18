@@ -36,16 +36,9 @@ public class AudioTestActivity extends Activity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.audiotest);
 
-        mAudioTrack = new AudioTrack(
-                AudioManager.STREAM_MUSIC, SAMPLE_RATE,
-                AudioFormat.CHANNEL_OUT_MONO,
-                AudioFormat.ENCODING_DEFAULT,
-                bufSize, AudioTrack.MODE_STREAM,
-                420);//セッションID
-        mAudioTrack.play();
-
-
         mVisualizer = new Visualizer(mAudioTrack.getAudioSessionId());
+        //これおまじない、一回無効にしないと、有効になってくれないので
+        mVisualizer.setEnabled(false);
 
 // 1024
         int captureSize = Visualizer.getCaptureSizeRange()[1];
@@ -67,12 +60,19 @@ public class AudioTestActivity extends Activity {
 
                     }
                 },
-                Visualizer.getMaxCaptureRate(),
+                Visualizer.getMaxCaptureRate(), //キャプチャーデータの取得レート（ミリヘルツ）
                 false,//trueならonWaveFormDataCapture()
                 true);//trueならonFftDataCapture()
 
         mVisualizer.setEnabled(true);
 
+        mAudioTrack = new AudioTrack(
+                AudioManager.STREAM_MUSIC, SAMPLE_RATE,
+                AudioFormat.CHANNEL_OUT_MONO,
+                AudioFormat.ENCODING_DEFAULT,
+                bufSize, AudioTrack.MODE_STREAM,
+                420);//セッションID
+        mAudioTrack.play();
         byte[] audioData = new byte[bufSize];
 
         // A単音
