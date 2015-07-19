@@ -40,6 +40,8 @@ import org.eclipse.paho.client.mqttv3.MqttException;
 import org.eclipse.paho.client.mqttv3.MqttPersistenceException;
 
 import java.net.URISyntaxException;
+import java.sql.Time;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Timer;
@@ -58,6 +60,7 @@ public class MainActivity extends YouTubeBaseActivity implements SensorEventList
     private Timer mTimer;
 
     private RequestQueue mQueue;
+    private Subscriber subscriber;
 
     AudioTrack mAudioTrack;
     Visualizer mVisualizer;
@@ -73,6 +76,9 @@ public class MainActivity extends YouTubeBaseActivity implements SensorEventList
 
         mSensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
         mTimer = new Timer();
+        subscriber = new Subscriber();
+        subscriber.connect();
+
         mQueue = Volley.newRequestQueue(this);
         HashMap<String, String> params = new HashMap<String, String>();
         httpRequest(Request.Method.GET, "http://100.123.45.187:31413/jsonp/v1/devices/37?procedure=set&params=%7B\"propertyName\"%3A\"GautomaticBathWaterHeatingHModeSetting\"%2C\"propertyValue\"%3A%5B0x41%5D%7D", params, new Response.Listener<String>() {
@@ -101,6 +107,7 @@ public class MainActivity extends YouTubeBaseActivity implements SensorEventList
                         @Override
                         public void onLoaded(String s) {
                             Log.d("TakuTaku", "start:" + System.currentTimeMillis());
+                            ArrayList<TimerTask> taskList = new ArrayList<TimerTask>();
                             TimerTask task = new TimerTask() {
                                 @Override
                                 public void run() {
@@ -114,7 +121,70 @@ public class MainActivity extends YouTubeBaseActivity implements SensorEventList
                                     });
                                 }
                             };
+                            taskList.add(task);
+                            TimerTask task1 = new TimerTask() {
+                                @Override
+                                public void run() {
+                                    Log.d("TakuTaku", "timer:" + System.currentTimeMillis());
+                                    subscriber.publish(42, 3);
+                                    subscriber.publish(43, 3);
+                                    subscriber.publish(44, 3);
+                                    subscriber.publish(45, 3);
+                                    subscriber.publish(46, 3);
+                                    subscriber.publish(47, 3);
+                                    try {
+                                        Thread.sleep(1000);
+                                    } catch (InterruptedException e) {
+                                        e.printStackTrace();
+                                    }
+                                    subscriber.resetAll();
+                                }
+                            };
+                            TimerTask task2 = new TimerTask() {
+                                private int counter = 0;
+
+                                @Override
+                                public void run() {
+                                    if(counter > 5) return;
+                                    Log.d("TakuTaku", "timer:" + System.currentTimeMillis());
+                                    subscriber.publish(42, 5);
+                                    subscriber.publish(43, 5);
+                                    subscriber.publish(44, 5);
+                                    subscriber.resetAll();
+
+                                    counter = counter + 1;
+                                }
+                            };
+                            TimerTask task3 = new TimerTask() {
+                                @Override
+                                public void run() {
+                                    Log.d("TakuTaku", "timer:" + System.currentTimeMillis());
+                                    for(int i = 42;i <= 59;++i){
+                                        subscriber.publish(i, 7);
+                                    }
+                                    subscriber.resetAll();
+                                }
+                            };
+                            TimerTask task4 = new TimerTask() {
+                                @Override
+                                public void run() {
+                                    Log.d("TakuTaku", "timer:" + System.currentTimeMillis());
+                                    for(int i = 42;i <= 59;++i){
+                                        subscriber.publish(i, 9);
+                                    }
+                                    try {
+                                        Thread.sleep(2000);
+                                    } catch (InterruptedException e) {
+                                        e.printStackTrace();
+                                    }
+                                    subscriber.resetAll();
+                                }
+                            };
                             mTimer.schedule(task, youTubePlayer.getDurationMillis() - youTubePlayer.getCurrentTimeMillis());
+                            mTimer.schedule(task1, 35000);
+                            mTimer.schedule(task2, 48000, 500);
+                            mTimer.schedule(task3, 60000);
+                            mTimer.schedule(task4, 71000);
                         }
 
                         @Override
@@ -182,12 +252,6 @@ public class MainActivity extends YouTubeBaseActivity implements SensorEventList
         }
         //
         */
-        try {
-            Subscriber subscriber = new Subscriber();
-            subscriber.connect();
-        } catch (URISyntaxException e) {
-            e.printStackTrace();
-        }
 
         //startActivity(new Intent(this, AudioTestActivity.class));
     }

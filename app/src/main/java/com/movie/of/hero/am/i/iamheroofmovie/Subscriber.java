@@ -19,8 +19,12 @@ public class Subscriber {
 	int port = 61613;
 	private CallbackConnection connection;
 
-	public Subscriber() throws URISyntaxException {
-		init();
+	public Subscriber(){
+		try {
+			init();
+		}catch (URISyntaxException e){
+			e.printStackTrace();
+		}
 	}
 
 	private void init() throws URISyntaxException {
@@ -47,10 +51,41 @@ public class Subscriber {
 			@Override
 			public void onSuccess(Void arg0) {
 				Log.d("TakuTaku", "SUCCESS:" + host + ":" + port);
-				connection.publish("3dbcs.biz/UTokyo/iREF/6F/Hilobby/Light/LED/LoE/L50/brightness/W", "value=10".getBytes(), QoS.AT_LEAST_ONCE, false, new Callback<Void>() {
+				resetAll();
+			}
+		});
+	}
+
+	public void resetAll(){
+		for(int i = 42;i <= 59;++i){
+			publish(i, 0);
+		}
+	}
+
+	public void publish(int num, int value){
+		connection.publish("3dbcs.biz/UTokyo/iREF/6F/Hilobby/Light/LED/LoE/L" + num + "/brightness/W", ("value=" + value).getBytes(), QoS.AT_LEAST_ONCE, false, new Callback<Void>() {
+			@Override
+			public void onSuccess(Void aVoid) {
+				Log.d("TakuTaku", "PUBLISH:" + host + ":" + port);
+			}
+
+			@Override
+			public void onFailure(Throwable throwable) {
+
+			}
+		});
+	}
+
+	public void publishHue(final int num, int value){
+		/*
+		connection.publish("3dbcs.biz/UTokyo / iREF/6F/Hilobby/Light/LED/hue/"+ i +"/status/W", ("value=" + 0).getBytes(), QoS.AT_LEAST_ONCE, false, new Callback<Void>() {
+			@Override
+			public void onSuccess(Void aVoid) {
+				Log.d("TakuTaku", "PUBLISH:" + host + ":" + port);
+				connection.publish("3dbcs.biz/UTokyo/iREF/6F/Hilobby/Light/LED/hue/light" + num + "/hue/W", ("value=" + value).getBytes(), QoS.AT_LEAST_ONCE, false, new Callback<Void>() {
 					@Override
 					public void onSuccess(Void aVoid) {
-						Log.d("TakuTaku", "SUCCESS:" + host + ":" + port);
+						Log.d("TakuTaku", "PUBLISH:" + host + ":" + port);
 					}
 
 					@Override
@@ -59,7 +94,29 @@ public class Subscriber {
 					}
 				});
 			}
+
+			@Override
+			public void onFailure(Throwable throwable) {
+
+			}
 		});
+		*/
+	}
+
+	public void resetHueAll(){
+		for(int i = 3;i <= 4;++i){
+			connection.publish("3dbcs.biz/UTokyo / iREF/6F/Hilobby/Light/LED/hue/" + i + "/status/W", ("value=" + 0).getBytes(), QoS.AT_LEAST_ONCE, false, new Callback<Void>() {
+				@Override
+				public void onSuccess(Void aVoid) {
+					Log.d("TakuTaku", "PUBLISH:" + host + ":" + port);
+				}
+
+				@Override
+				public void onFailure(Throwable throwable) {
+
+				}
+			});
+		}
 	}
 
 	public void disconnect() {
