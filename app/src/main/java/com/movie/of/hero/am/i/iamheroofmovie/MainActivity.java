@@ -20,6 +20,13 @@ import android.view.View;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.android.volley.NetworkResponse;
+import com.android.volley.Request;
+import com.android.volley.RequestQueue;
+import com.android.volley.Response;
+import com.android.volley.VolleyError;
+import com.android.volley.toolbox.StringRequest;
+import com.android.volley.toolbox.Volley;
 import com.google.android.youtube.player.YouTubeBaseActivity;
 import com.google.android.youtube.player.YouTubeInitializationResult;
 import com.google.android.youtube.player.YouTubePlayer;
@@ -33,6 +40,8 @@ import org.eclipse.paho.client.mqttv3.MqttException;
 import org.eclipse.paho.client.mqttv3.MqttPersistenceException;
 
 import java.net.URISyntaxException;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.UUID;
@@ -48,6 +57,8 @@ public class MainActivity extends YouTubeBaseActivity implements SensorEventList
     private SensorManager mSensorManager;
     private Timer mTimer;
 
+    private RequestQueue mQueue;
+
     AudioTrack mAudioTrack;
     Visualizer mVisualizer;
 
@@ -62,6 +73,14 @@ public class MainActivity extends YouTubeBaseActivity implements SensorEventList
 
         mSensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
         mTimer = new Timer();
+        mQueue = Volley.newRequestQueue(this);
+        HashMap<String, String> params = new HashMap<String, String>();
+        httpRequest(Request.Method.GET, "http://100.123.45.187:31413/jsonp/v1/devices/37?procedure=set&params=%7B\"propertyName\"%3A\"GautomaticBathWaterHeatingHModeSetting\"%2C\"propertyValue\"%3A%5B0x41%5D%7D", params, new Response.Listener<String>() {
+            @Override
+            public void onResponse(String response) {
+                Log.d("TakuTaku", response);
+            }
+        });
 
         YouTubePlayerView youTubeView = (YouTubePlayerView) findViewById(R.id.youtube_view);
         //youTubeView.setVisibility(View.INVISIBLE);
@@ -86,6 +105,13 @@ public class MainActivity extends YouTubeBaseActivity implements SensorEventList
                                 @Override
                                 public void run() {
                                     Log.d("TakuTaku", "timer:" + System.currentTimeMillis());
+                                    HashMap<String, String> params = new HashMap<String, String>();
+                                    httpRequest(Request.Method.GET, "http://100.123.45.187:31413/jsonp/v1/devices/37?procedure=set&params=%7B%22propertyName%22%3A%22GautomaticBathWaterHeatingHModeSetting%22%2C%22propertyValue%22%3A%5B0x42%5D%7D", params, new Response.Listener<String>() {
+                                        @Override
+                                        public void onResponse(String response) {
+                                            Log.d("TakuTaku", response);
+                                        }
+                                    });
                                 }
                             };
                             mTimer.schedule(task, youTubePlayer.getDurationMillis() - youTubePlayer.getCurrentTimeMillis());
@@ -164,6 +190,22 @@ public class MainActivity extends YouTubeBaseActivity implements SensorEventList
         }
 
         //startActivity(new Intent(this, AudioTestActivity.class));
+    }
+
+    private void httpRequest(int method, String url , final Map<String, String> params, Response.Listener response){
+        StringRequest request = new StringRequest(method ,url, response, new Response.ErrorListener(){
+            @Override
+            public void onErrorResponse(VolleyError error) {
+                error.printStackTrace();
+                Log.d("TakuTaku", "error:" + error.getMessage());
+            }
+        }) {
+            @Override
+            protected Map<String,String> getParams(){
+                return params;
+            }
+        };
+        mQueue.add(request);
     }
 
     @Override
