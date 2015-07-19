@@ -2,6 +2,7 @@ package com.movie.of.hero.am.i.iamheroofmovie;
 
 import android.app.Activity;
 import android.content.Context;
+import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
@@ -11,59 +12,73 @@ import android.media.AudioManager;
 import android.media.AudioTrack;
 import android.media.audiofx.Visualizer;
 import android.os.Bundle;
+import android.util.AttributeSet;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
 
 public class AudioView extends View {
-    private byte[] mBytes;
-    private float[] mPoints;
+    Bitmap mTmpImage;
+    private ArrayList<Byte> mByteList;
     private Rect mRect = new Rect();
+    private Rect mVisibleRect;
+    private float mPointX = 0;
+    private int mLastIndex = 0;
 
     private Paint mForePaint = new Paint();
 
-    public AudioView(Context context) {
-        super(context);
+    public AudioView(Context context, AttributeSet attrs) {
+        super(context, attrs);
         init();
     }
 
     private void init() {
-        mBytes = null;
-
+        mVisibleRect = new Rect();
+        mByteList = new ArrayList<Byte>();
         mForePaint.setStrokeWidth(1f);
         mForePaint.setAntiAlias(true);
         mForePaint.setColor(Color.rgb(0, 128, 255));
     }
 
     public void updateVisualizer(byte[] bytes) {
-        mBytes = bytes;
+        for(byte b : bytes){
+            mByteList.add(b);
+        }
         invalidate();
     }
 
     @Override
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
+        int centerY = mVisibleRect.centerY();
+        Canvas bmp = new Canvas(mTmpImage);
 
-        if (mBytes == null) {
-            return;
+        for(int i = mLastIndex;i < mByteList.size();++i){
+            if(i + 1 >= mByteList.size()) continue;
+            float next = mPointX + 1;
+            bmp.drawLine(mPointX, centerY + mByteList.get(i), next, centerY + mByteList.get(i + 1), mForePaint);
+            mPointX = next;
         }
+        canvas.drawBitmap(mTmpImage, null, mVisibleRect, null);
+        mLastIndex = mByteList.size() - 1;
+    }
 
-        if (mPoints == null || mPoints.length < mBytes.length * 4) {
-            mPoints = new float[mBytes.length * 4];
+    @Override
+    protected void onSizeChanged(int xNew, int yNew, int xOld, int yOld){
+        super.onSizeChanged(xNew, yNew, xOld, yOld);
+        mVisibleRect = new Rect(0,0,xNew, yNew);
+        mTmpImage = Bitmap.createBitmap(xNew, yNew, Bitmap.Config.ARGB_8888);
+    }
+
+    public void release() {
+        if(mTmpImage != null){
+            mTmpImage.recycle();
+            mTmpImage = null;
         }
-
-        mRect.set(0, 0, getWidth(), getHeight());
-
-        for (int i = 0; i < mBytes.length - 1; i++) {
-            mPoints[i * 4] = mRect.width() * i / (mBytes.length - 1);
-            mPoints[i * 4 + 1] = mRect.height() / 2
-                    + ((byte) (mBytes[i] + 128)) * (mRect.height() / 2) / 128;
-            mPoints[i * 4 + 2] = mRect.width() * (i + 1) / (mBytes.length - 1);
-            mPoints[i * 4 + 3] = mRect.height() / 2
-                    + ((byte) (mBytes[i + 1] + 128)) * (mRect.height() / 2) / 128;
-        }
-
-        canvas.drawLines(mPoints, mForePaint);
     }
 }

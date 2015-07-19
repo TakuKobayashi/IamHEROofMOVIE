@@ -6,8 +6,10 @@ import android.media.AudioManager;
 import android.media.AudioTrack;
 import android.media.audiofx.Visualizer;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.Window;
 import android.widget.Toast;
 
 import com.google.android.youtube.player.YouTubeBaseActivity;
@@ -26,6 +28,7 @@ public class AudioTestActivity extends Activity {
 
     AudioTrack mAudioTrack;
     Visualizer mVisualizer;
+    AudioView mAudioView;
 
     //サンプルレート
     static int SAMPLE_RATE = 44100;
@@ -34,7 +37,18 @@ public class AudioTestActivity extends Activity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        requestWindowFeature(Window.FEATURE_NO_TITLE);
         setContentView(R.layout.audiotest);
+
+        mAudioView = (AudioView) findViewById(R.id.AudioView);
+
+        mAudioTrack = new AudioTrack(
+                AudioManager.STREAM_MUSIC, SAMPLE_RATE,
+                AudioFormat.CHANNEL_OUT_MONO,
+                AudioFormat.ENCODING_DEFAULT,
+                bufSize, AudioTrack.MODE_STREAM,
+                420);//セッションID
+        mAudioTrack.play();
 
         mVisualizer = new Visualizer(mAudioTrack.getAudioSessionId());
         //これおまじない、一回無効にしないと、有効になってくれないので
@@ -49,30 +63,33 @@ public class AudioTestActivity extends Activity {
                 new Visualizer.OnDataCaptureListener() {
                     // Waveデータ
                     public void onWaveFormDataCapture(Visualizer visualizer, byte[] bytes, int samplingRate) {
-
+                        /*
+                        for(byte b : bytes) {
+                            Log.d("TakuTaku", "" + b);
+                        }
+                        */
+                        mAudioView.updateVisualizer(bytes);
                     }
 
                     // フーリエ変換
                     public void onFftDataCapture(Visualizer visualizer, byte[] bytes, int samplingRate) {
-
+                        //mAudioView.updateVisualizer(bytes);
                         //このbytesがFFT後のデータ
                         //何度も呼ばれるのでこのデータを分析する
-
+                        /*
+                        for(byte b : bytes) {
+                            Log.d("TakuTaku", "" + b);
+                        }
+                        mAudioView.updateVisualizer(bytes);
+                        */
                     }
                 },
                 Visualizer.getMaxCaptureRate(), //キャプチャーデータの取得レート（ミリヘルツ）
-                false,//trueならonWaveFormDataCapture()
-                true);//trueならonFftDataCapture()
+                true,//trueならonWaveFormDataCapture()
+                false);//trueならonFftDataCapture()
 
         mVisualizer.setEnabled(true);
 
-        mAudioTrack = new AudioTrack(
-                AudioManager.STREAM_MUSIC, SAMPLE_RATE,
-                AudioFormat.CHANNEL_OUT_MONO,
-                AudioFormat.ENCODING_DEFAULT,
-                bufSize, AudioTrack.MODE_STREAM,
-                420);//セッションID
-        mAudioTrack.play();
         byte[] audioData = new byte[bufSize];
 
         // A単音
@@ -120,5 +137,6 @@ public class AudioTestActivity extends Activity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
+        mAudioView.release();
     }
 }
