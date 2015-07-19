@@ -12,6 +12,7 @@ import android.media.AudioManager;
 import android.media.AudioTrack;
 import android.media.audiofx.Visualizer;
 import android.os.Bundle;
+import android.provider.Settings;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -32,6 +33,8 @@ import org.eclipse.paho.client.mqttv3.MqttException;
 import org.eclipse.paho.client.mqttv3.MqttPersistenceException;
 
 import java.net.URISyntaxException;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.UUID;
 
 
@@ -40,9 +43,10 @@ public class MainActivity extends YouTubeBaseActivity implements SensorEventList
     private MqttAndroidClient mqttAndroidClient;
 
     //Youtube のビデオID
-    private static String videoId = "2kJ5eMXAkyk";
+    private static String videoId = "BBRqGcDEjiM";
     private YouTubePlayer youTubePlayer;
     private SensorManager mSensorManager;
+    private Timer mTimer;
 
     AudioTrack mAudioTrack;
     Visualizer mVisualizer;
@@ -57,6 +61,7 @@ public class MainActivity extends YouTubeBaseActivity implements SensorEventList
         setContentView(R.layout.activity_main);
 
         mSensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
+        mTimer = new Timer();
 
         YouTubePlayerView youTubeView = (YouTubePlayerView) findViewById(R.id.youtube_view);
         //youTubeView.setVisibility(View.INVISIBLE);
@@ -68,6 +73,44 @@ public class MainActivity extends YouTubeBaseActivity implements SensorEventList
                     youTubePlayer = player;
                     youTubePlayer.setFullscreen(true);
                     youTubePlayer.loadVideo(videoId);
+                    youTubePlayer.setPlayerStateChangeListener(new YouTubePlayer.PlayerStateChangeListener() {
+                        @Override
+                        public void onLoading() {
+
+                        }
+
+                        @Override
+                        public void onLoaded(String s) {
+                            Log.d("TakuTaku", "start:" + System.currentTimeMillis());
+                            TimerTask task = new TimerTask() {
+                                @Override
+                                public void run() {
+                                    Log.d("TakuTaku", "timer:" + System.currentTimeMillis());
+                                }
+                            };
+                            mTimer.schedule(task, youTubePlayer.getDurationMillis() - youTubePlayer.getCurrentTimeMillis());
+                        }
+
+                        @Override
+                        public void onAdStarted() {
+
+                        }
+
+                        @Override
+                        public void onVideoStarted() {
+
+                        }
+
+                        @Override
+                        public void onVideoEnded() {
+
+                        }
+
+                        @Override
+                        public void onError(YouTubePlayer.ErrorReason errorReason) {
+
+                        }
+                    });
                 }
             }
 
@@ -120,55 +163,6 @@ public class MainActivity extends YouTubeBaseActivity implements SensorEventList
             e.printStackTrace();
         }
 
-        /*
-        mAudioTrack = new AudioTrack(
-                AudioManager.STREAM_MUSIC, SAMPLE_RATE,
-                AudioFormat.CHANNEL_OUT_MONO,
-                AudioFormat.ENCODING_DEFAULT,
-                bufSize, AudioTrack.MODE_STREAM,
-                420);//セッションID
-        mAudioTrack.play();
-
-
-        mVisualizer = new Visualizer(mAudioTrack.getAudioSessionId());
-
-// 1024
-        int captureSize = Visualizer.getCaptureSizeRange()[1];
-        mVisualizer.setCaptureSize(captureSize);
-
-
-        mVisualizer.setDataCaptureListener(
-                new Visualizer.OnDataCaptureListener() {
-                    // Waveデータ
-                    public void onWaveFormDataCapture(Visualizer visualizer, byte[] bytes, int samplingRate) {
-
-                    }
-
-                    // フーリエ変換
-                    public void onFftDataCapture(Visualizer visualizer, byte[] bytes, int samplingRate) {
-
-                        //このbytesがFFT後のデータ
-                        //何度も呼ばれるのでこのデータを分析する
-
-                    }
-                },
-                Visualizer.getMaxCaptureRate(),
-                false,//trueならonWaveFormDataCapture()
-                true);//trueならonFftDataCapture()
-
-        mVisualizer.setEnabled(true);
-
-        byte[] audioData = new byte[bufSize];
-
-        // A単音
-        double freqA = 440;
-        double t = 0.0;
-        double dt = 1.0 / SAMPLE_RATE;
-        for (int i = 0; i < audioData.length; i++, t += dt) {
-           audioData[i] = (byte) (Byte.MAX_VALUE * (Math.sin(2.0 * Math.PI * t * freqA)));
-        }
-        mAudioTrack.write(audioData, 0, audioData.length);
-        */
         //startActivity(new Intent(this, AudioTestActivity.class));
     }
 
@@ -217,6 +211,11 @@ public class MainActivity extends YouTubeBaseActivity implements SensorEventList
     protected void onDestroy() {
         super.onDestroy();
         youTubePlayer.release();
+        if(mTimer != null){
+            mTimer.cancel();
+            mTimer = null;
+        }
+
     }
 
     @Override
